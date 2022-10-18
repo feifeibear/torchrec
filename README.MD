@@ -1,4 +1,7 @@
-# TorchRec (Beta Release)
+# TorchRec (ColossalAI Version)
+Adding ColossalAI CachedEmbeddingBag to Computing Kernel.
+
+# TorchRec
 [Docs](https://pytorch.org/torchrec/)
 
 TorchRec is a PyTorch domain library built to provide common sparsity & parallelism primitives needed for large-scale recommender systems (RecSys). It allows authors to train models with large embedding tables sharded across many GPUs.
