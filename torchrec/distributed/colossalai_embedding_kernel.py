@@ -175,7 +175,8 @@ class CAIBatchedDenseEmbeddingBag(BaseBatchedEmbeddingBag):
     ) -> None:
         super().__init__(config, pg, device)
 
-        num_embeddings = sum(self._num_embeddings)
+        # num_embeddings = sum(self._num_embeddings)
+        num_embeddings = sum(self._local_rows)
         assert all(x == self._local_cols[0]
                    for x in self._local_cols), "local col should be consistent in all embeddings"
         embedding_dim = self._local_cols[0]
@@ -183,24 +184,11 @@ class CAIBatchedDenseEmbeddingBag(BaseBatchedEmbeddingBag):
         
         cache_ratio = config.fused_params["cache_load_factor"]
         print(f"CAIBatchedDenseEmbeddingBag cache ratio {cache_ratio}")
-        
-        # weight_list = []
-        # for embedding_config in self._config.embedding_tables:
-        #     weight_list.append(torch.empty(
-        #         embedding_config.local_rows,
-        #         embedding_config.local_cols,
-        #         device='cpu',
-        #     ).uniform_(
-        #         embedding_config.get_weight_init_min(),
-        #         embedding_config.get_weight_init_max(),
-        #     ))
-            
+        print(f"CAIBatchedDenseEmbeddingBag embedding size {num_embeddings} {embedding_dim}")
         weight_malloc = torch.empty(
             num_embeddings, embedding_dim, device='cpu',).pin_memory()
-        weight_split_rows = []
-        for embedding_config in self._config.embedding_tables:
-            weight_split_rows.append(embedding_config.local_rows)
-        weight_list = torch.split(weight_malloc, weight_split_rows, 0)
+        
+        weight_list = torch.split(weight_malloc, self._local_rows, 0)
         for i, embedding_config in enumerate(self._config.embedding_tables):
              weight_list[i].uniform_(
                 embedding_config.get_weight_init_min(),
@@ -218,7 +206,7 @@ class CAIBatchedDenseEmbeddingBag(BaseBatchedEmbeddingBag):
 
         )
         self._table_idx_offsets = torch.cumsum(torch.tensor(
-            [0] + self._num_embeddings, device= torch.cuda.current_device()), 0, dtype=torch.long)
+            [0] + self._local_rows, device= torch.cuda.current_device()), 0, dtype=torch.long)
         self._already_linearized = False
         # TODO count different idx num
         # self._idx_input_record = torch.zeros(num_embeddings)
