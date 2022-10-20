@@ -183,6 +183,11 @@ class CAIBatchedDenseEmbeddingBag(BaseBatchedEmbeddingBag):
         self.pool_str = pooling_mode_to_str(self._pooling)
         
         cache_ratio = config.fused_params["cache_load_factor"]
+        
+        if "num_embeddings_cap" in config.fused_params:
+            num_embeddings_cap = config.fused_params["num_embeddings_cap"]
+            cache_ratio = min(1.0, num_embeddings_cap / num_embeddings)
+        
         print(f"CAIBatchedDenseEmbeddingBag cache ratio {cache_ratio}")
         print(f"CAIBatchedDenseEmbeddingBag embedding size {num_embeddings} {embedding_dim}")
         weight_malloc = torch.empty(
